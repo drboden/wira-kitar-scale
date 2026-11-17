@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scale test</title>
+<style>
+  :root { --green:#1FA63D; --dark:#066839; --ink:#0B0B0B; --muted:#5A635C; --bg:#F4F6F3; --amber:#B7791F; --red:#C53030; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, Roboto, sans-serif; background:var(--bg); color:var(--ink); }
+  header { background:var(--ink); color:#fff; padding:16px 24px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  header h1 { margin:0; font-size:22px; }
+  .status { font-size:15px; padding:6px 12px; border-radius:999px; background:#333; }
+  .status.ok { background:var(--dark); }
+  .status.bad { background:var(--red); }
+  main { padding:24px; display:grid; gap:20px; grid-template-columns: 1fr; max-width:1100px; margin:0 auto; }
+  @media (min-width: 900px) { main { grid-template-columns: 1.2fr 1fr; } }
+  .card { background:#fff; border-radius:16px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  .weight { font-size:96px; font-weight:800; line-height:1; font-variant-numeric: tabular-nums; }
+  .unit { font-size:36px; color:var(--muted); margin-left:8px; }
+  .stable { margin-top:16px; font-size:22px; font-weight:700; display:flex; align-items:center; gap:10px; }
+  .dot { width:22px; height:22px; border-radius:50%; background:var(--amber); }
+  .stable.yes .dot { background:var(--green); }
+  .stable.yes { color:var(--dark); }
+  .stable.no { color:var(--amber); }
+  h2 { margin:0 0 12px; font-size:18px; }
+  #log { font-family: ui-monospace, Menlo, Consolas, monospace; font-size:15px; background:#0B0B0B; color:#9BE7B0; border-radius:10px; padding:12px; height:340px; overflow:auto; white-space:pre-wrap; word-break:break-all; }
+  #log .raw { color:#FFD58A; }
+  .buttons { display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; }
+  button { font-size:18px; padding:14px 20px; border-radius:12px; border:0; background:var(--dark); color:#fff; }
+  button.secondary { background:#E2E8E3; color:var(--ink); }
+  .hint { color:var(--muted); font-size:15px; line-height:1.5; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Wira Kitar scale test</h1>
+  <span id="status" class="status">Starting…</span>
+</header>
+<main>
+  <section class="card">
+    <div><span id="weight" class="weight">--.--</span><span class="unit">kg</span></div>
+    <div id="stable" class="stable no"><span class="dot"></span><span id="stableText">Waiting for the scale</span></div>
+    <div class="buttons">
+      <button onclick="KleanScale.reconnect()">Reconnect scale</button>
+      <button class="secondary" onclick="KleanScale.openSettings()">Settings</button>
+      <button class="secondary" onclick="KleanScale.reloadDashboard()">Open dashboard</button>
+    </div>
+    <p class="hint">Put something on the scale. The weight here should match the indicator's display.
+      If nothing appears, check the baud rate in Settings. If the lines on the right show text but the
+      weight stays blank, send a screenshot of those lines to Klean support.</p>
+  </section>
+  <section class="card">
+    <h2>What the indicator is sending</h2>
+    <div id="log"></div>
+    <p class="hint">Green lines were read as a weight. Yellow lines arrived but weren't recognised.</p>
+  </section>
+</main>
+<script>
+  const $ = id => document.getElementById(id);
+  const log = $('log');
+  function addLine(text, cls) {
+    const div = document.createElement('div');
+    if (cls) div.className = cls;
+    div.textContent = new Date().toLocaleTimeString() + '  ' + text;
+    log.prepend(div);
+    while (log.childNodes.length > 60) log.removeChild(log.lastChild);
+  }
+  function showStatus(s) {
+    if (!s) return;
+    const el = $('status');
+    el.textContent = s.message || (s.connected ? 'Connected' : 'Not connected');
+    el.className = 'status ' + (s.connected ? 'ok' : 'bad');
+  }
+  function showReading(r) {
+    if (!r || r.weight === null) return;
+    $('weight').textContent = Number(r.weight).toFixed(2);
+    const st = $('stable');
+    st.className = 'stable ' + (r.stable ? 'yes' : 'no');
+    $('stableText').textContent = r.stable ? 'Stable: ready to capture' : 'Settling…';
+  }
+  window.addEventListener('klean-scale', e => { showReading(e.detail); addLine(e.detail.raw); });
+  window.addEventListener('klean-scale-raw', e => addLine(e.detail.raw, 'raw'));
+  window.addEventListener('klean-scale-status', e => showStatus(e.detail));
+  if (window.KleanScale) {
+    try { showStatus(JSON.parse(KleanScale.getStatus())); } catch (e) {}
+    try { showReading(JSON.parse(KleanScale.getLatest())); } catch (e) {}
+  } else {
+    $('status').textContent = 'Open this page inside the Wira Kitar Scale app';
+  }
+</script>
+</body>
+</html>
