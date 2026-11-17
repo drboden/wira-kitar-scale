@@ -5,6 +5,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,3 +34,13 @@ jobs:
         with:
           name: WiraKitarScale-apk
           path: WiraKitarScale.apk
+
+      - name: Save the app file to the "apk" branch
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git checkout --orphan apk-out
+          git rm -rf --cached . > /dev/null
+          git add -f WiraKitarScale.apk
+          git commit -m "App build from ${GITHUB_SHA::7}"
+          git push -f origin apk-out:apk
