@@ -16,10 +16,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
-
       - name: Build the app (debug APK)
+        env:
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
         run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
           chmod +x ./gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
 
