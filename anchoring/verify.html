@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wira Kitar Record Check</title>
+<style>
+  :root { --ink:#0B0B0B; --green:#066839; --bright:#1FA63D; --bg:#F4F6F3; --card:#fff; --line:#d9dfd8; --muted:#5b665e; --bad:#b3261e; --badbg:#fdecea; --okbg:#e7f5ec; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ink:#eef2ee; --green:#5fd08a; --bright:#3ccf68; --bg:#111513; --card:#1a201c; --line:#2c352f; --muted:#9aa79e; --bad:#ff8a80; --badbg:#3a1d1b; --okbg:#173023; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 28px; margin: 0 0 4px; }
+  h1 b { color: var(--green); }
+  .lead { color: var(--muted); margin: 0 0 24px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  label { font-weight: 600; display:block; margin-bottom: 6px; }
+  .hint { color: var(--muted); font-size: 14px; font-weight: 400; }
+  textarea { width:100%; min-height: 140px; font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace; padding: 10px; border:1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+  input[type=file] { margin: 8px 0; }
+  button { background: var(--green); color:#fff; border:0; border-radius: 8px; padding: 12px 22px; font-size: 16px; font-weight: 600; cursor: pointer; }
+  button:focus-visible { outline: 3px solid var(--bright); outline-offset: 2px; }
+  #result { display:none; }
+  .ok { background: var(--okbg); border-color: var(--bright); }
+  .bad { background: var(--badbg); border-color: var(--bad); }
+  .verdict { font-size: 22px; font-weight: 700; margin: 0 0 8px; }
+  .ok .verdict { color: var(--green); } .bad .verdict { color: var(--bad); }
+  dl { display:grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 12px 0 0; font-size: 14px; }
+  dt { color: var(--muted); } dd { margin:0; word-break: break-all; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  ol { padding-left: 20px; } li { margin: 4px 0; }
+  a { color: var(--green); }
+  .steps li.pass::marker { color: var(--bright); } .steps li.fail { color: var(--bad); }
+</style>
+</head>
+<body>
+<main>
+  <h1><b>Wira Kitar</b> record check</h1>
+  <p class="lead">Check that a recycling record has not been changed since KLEAN anchored it on a public blockchain. Everything runs in your browser; nothing is uploaded.</p>
+
+  <div class="card">
+    <label for="record">1. The record <span class="hint">(JSON, exactly as exported from the dashboard, including its salt)</span></label>
+    <textarea id="record" spellcheck="false" placeholder='{"record_id":"B0007","visit_id":"V1", ...}'></textarea>
+  </div>
+
+  <div class="card">
+    <label for="batch">2. The anchored batch <span class="hint">(the batch .json file from KLEAN)</span></label>
+    <input type="file" id="batchFile" accept=".json,application/json" aria-label="Choose batch file">
+    <textarea id="batch" spellcheck="false" placeholder='{"batch_id":"C001-2026-11-16","root":"...","anchor":{...},"records":[...]}'></textarea>
+  </div>
+
+  <button id="go">Check record</button>
+
+  <div class="card" id="result" role="status" aria-live="polite" style="margin-top:16px">
+    <p class="verdict" id="verdict"></p>
+    <ul class="steps" id="steps" style="list-style:none;padding-left:0"></ul>
+    <dl id="details"></dl>
+  </div>
+
+  <div class="card">
+    <strong>How this works</strong>
+    <ol>
+      <li>Each record's fields are put in a fixed order and turned into a SHA-256 fingerprint.</li>
+      <li>Each day's fingerprints are combined into one "root" fingerprint, and only that root is written to the blockchain. No names, phone numbers or prices are ever published.</li>
+      <li>This page recomputes the record's fingerprint and follows its proof up to the root. If any field has changed, even by 0.01 kg, the check fails.</li>
+      <li>For Hedera batches, the page also reads the root straight from Hedera's public records to confirm it was published on that date.</li>
+    </ol>
+  </div>
+</main>
+
+<script>
+const LEAF_FIELDS = ['record_id','visit_id','centre_id','collector_ref','material','weight_kg','weight_source','scale_raw','scale_stable','captured_at','salt'];
+
+function normalise(r) {
+  const out = {};
+  for (const f of LEAF_FIELDS) {
+    let v = r[f];
+    if (v === undefined || v === null) {
+      if (f === 'scale_raw') v = '';
+      else throw new Error(`The record is missing "${f}"`);
+    }
+    if (f === 'weight_kg') { const n = Number(v); if (!Number.isFinite(n)) throw new Error('weight_kg is not a number'); v = n.toFixed(3); }
+    else if (f === 'scale_stable') v = v === true || v === 'true' || v === 1 || v === '1';
+    else v = String(v);
+    out[f] = v;
+  }
+  return out;
+}
+const hex = b => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+const unhex = h => new Uint8Array(h.match(/../g).map(x => parseInt(x, 16)));
+async function sha(prefix, ...parts) {
+  const len = 1 + parts.reduce((a, p) => a + p.length, 0);
+  const buf = new Uint8Array(len); buf[0] = prefix; let o = 1;
+  for (const p of parts) { buf.set(p, o); o += p.length; }
+  return new Uint8Array(await crypto.subtle.digest('SHA-256', buf));
+}
+const leafHash = r => sha(0x00, new TextEncoder().encode(JSON.stringify(normalise(r))));
+const nodeHash = (l, r) => sha(0x01, l, r);
+
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+async function hederaCheck(anchor, root) {
+  const net = anchor.network === 'mainnet' ? 'mainnet-public' : 'testnet';
+  const url = `https://${net}.mirrornode.hedera.com/api/v1/topics/${anchor.topic_id}/messages/${anchor.sequence_number}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Hedera mirror node returned ' + res.status);
+  const j = await res.json();
+  const msg = JSON.parse(atob(j.message));
+  return { match: msg.root === root, consensus: j.consensus_timestamp, msg };
+}
+
+document.getElementById('batchFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (f) document.getElementById('batch').value = await f.text();
+});
+
+document.getElementById('go').addEventListener('click', async () => {
+  const box = document.getElementById('result'), steps = [], details = [];
+  let ok = true;
+  const step = (pass, text) => { steps.push(`<li class="${pass ? 'pass' : 'fail'}">${pass ? '✓' : '✗'} ${esc(text)}</li>`); if (!pass) ok = false; };
+  try {
+    const record = JSON.parse(document.getElementById('record').value);
+    const batch = JSON.parse(document.getElementById('batch').value);
+    const leaf = await leafHash(record);
+    const entry = (batch.records || []).find(r => r.record_id === String(record.record_id));
+    step(!!entry, entry ? `Record ${record.record_id} is listed in batch ${batch.batch_id}` : `Record ${record.record_id} is not in batch ${batch.batch_id}`);
+    if (entry) {
+      step(entry.leaf_hash === hex(leaf), entry.leaf_hash === hex(leaf) ? 'Its fingerprint matches the one anchored' : 'Its fingerprint does not match: the record has been changed since it was anchored');
+      let h = leaf;
+      for (const s of entry.proof) { const sib = unhex(s.hash); h = s.side === 'L' ? await nodeHash(sib, h) : await nodeHash(h, sib); }
+      step(hex(h) === batch.root, hex(h) === batch.root ? 'Its proof leads to the batch root' : 'Its proof does not lead to the batch root');
+    }
+    const a = batch.anchor || {};
+    details.push(['Batch', batch.batch_id], ['Date', batch.date], ['Records in batch', batch.count], ['Root', batch.root]);
+    if (a.method === 'hedera') {
+      details.push(['Blockchain', `Hedera ${a.network}`], ['Topic / message', `${a.topic_id} #${a.sequence_number}`], ['Consensus time', a.consensus_timestamp]);
+      try {
+        const hc = await hederaCheck(a, batch.root);
+        step(hc.match, hc.match ? `Hedera's public record shows this root, published at ${hc.consensus}` : 'Hedera\'s public record shows a different root');
+      } catch (e) { step(false, 'Could not reach Hedera to confirm the root: ' + e.message); }
+      details.push(['Explorer', `<a href="https://hashscan.io/${esc(a.network)}/topic/${esc(a.topic_id)}" target="_blank" rel="noopener">View on HashScan</a>`]);
+    } else if (a.method === 'opentimestamps') {
+      details.push(['Blockchain', 'Bitcoin, via OpenTimestamps'], ['Proof file', a.ots_file], ['Status', a.status]);
+      details.push(['Confirm the date', 'Upload the .ots proof file to <a href="https://opentimestamps.org" target="_blank" rel="noopener">opentimestamps.org</a> and paste the root above as the hash']);
+    } else {
+      details.push(['Blockchain', 'Not anchored (test batch)']);
+    }
+  } catch (e) { step(false, e.message); }
+  box.className = 'card ' + (ok ? 'ok' : 'bad');
+  box.style.display = 'block';
+  document.getElementById('verdict').textContent = ok ? 'Record verified' : 'Record could not be verified';
+  document.getElementById('steps').innerHTML = steps.join('');
+  document.getElementById('details').innerHTML = details.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${String(v).startsWith('<a') || String(v).startsWith('Upload') ? v : esc(v)}</dd>`).join('');
+});
+</script>
+</body>
+</html>

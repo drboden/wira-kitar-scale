@@ -1,0 +1,19 @@
+{
+  "name": "wira-kitar-anchoring",
+  "version": "1.0.0",
+  "description": "Anchor Wira Kitar records on Hedera or Bitcoin",
+  "scripts": {
+    "anchor": "node src/anchor.js",
+    "verify": "node src/verify.js",
+    "upgrade": "node src/upgrade.js",
+    "create-topic": "node src/hedera-create-topic.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@hashgraph/sdk": "^2.81.0",
+    "opentimestamps": "^0.4.9"
+  },
+  "private": true
+}
