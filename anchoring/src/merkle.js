@@ -27,6 +27,13 @@ const LEAF_FIELDS = [
   'salt',           // random per record, stored in the dashboard, stops guessing
 ];
 
+// Only on correction records. Added after the fields above, and only when present,
+// so normal bags (and batches anchored before corrections existed) hash exactly as before.
+const OPTIONAL_FIELDS = [
+  'adjusts_record_id', // record_id of the original bag being corrected
+  'reason_code',       // e.g. wrong_weight, wrong_material, duplicate
+];
+
 function normalise(record) {
   const out = {};
   for (const f of LEAF_FIELDS) {
@@ -45,6 +52,13 @@ function normalise(record) {
       v = String(v);
     }
     out[f] = v;
+  }
+  for (const f of OPTIONAL_FIELDS) {
+    const v = record[f];
+    if (v !== undefined && v !== null && v !== '') out[f] = String(v);
+  }
+  if ((out.adjusts_record_id === undefined) !== (out.reason_code === undefined)) {
+    throw new Error(`Record ${out.record_id}: a correction needs both adjusts_record_id and reason_code`);
   }
   if (out.salt.length < 16) throw new Error(`Record ${out.record_id}: salt must be at least 16 characters`);
   return out;
@@ -112,4 +126,4 @@ function randomSalt() {
   return crypto.randomBytes(16).toString('hex');
 }
 
-module.exports = { SCHEME, LEAF_FIELDS, normalise, canonical, leafHash, buildTree, proofFor, rootFromProof, randomSalt };
+module.exports = { SCHEME, LEAF_FIELDS, OPTIONAL_FIELDS, normalise, canonical, leafHash, buildTree, proofFor, rootFromProof, randomSalt };

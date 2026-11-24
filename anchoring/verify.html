@@ -69,6 +69,7 @@
 </main>
 
 <script>
+const OPTIONAL_FIELDS = ['adjusts_record_id', 'reason_code'];
 const LEAF_FIELDS = ['record_id','visit_id','centre_id','collector_ref','material','weight_kg','weight_source','scale_raw','scale_stable','captured_at','salt'];
 
 function normalise(r) {
@@ -83,6 +84,10 @@ function normalise(r) {
     else if (f === 'scale_stable') v = v === true || v === 'true' || v === 1 || v === '1';
     else v = String(v);
     out[f] = v;
+  }
+  for (const f of OPTIONAL_FIELDS) {
+    const v = r[f];
+    if (v !== undefined && v !== null && v !== '') out[f] = String(v);
   }
   return out;
 }
@@ -147,6 +152,7 @@ document.getElementById('go').addEventListener('click', async () => {
       for (const s of entry.proof) { const sib = unhex(s.hash); h = s.side === 'L' ? await nodeHash(sib, h) : await nodeHash(h, sib); }
       step(hex(h) === batch.root, hex(h) === batch.root ? 'Its proof leads to the batch root' : 'Its proof does not lead to the batch root');
     }
+    if (record.adjusts_record_id) details.push(['Correction of', `${record.adjusts_record_id} (${record.reason_code})`]);
     const a = batch.anchor || {};
     details.push(['Batch', batch.batch_id], ['Date', batch.date], ['Records in batch', batch.count], ['Root', batch.root]);
     if (a.method === 'hedera') {

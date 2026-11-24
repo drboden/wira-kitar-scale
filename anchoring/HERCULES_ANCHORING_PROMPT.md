@@ -32,6 +32,7 @@ The blockchain job is already built (outside Hercules). Do not add any blockchai
   - scale_stable (boolean)
   - captured_at (string, ISO 8601 in UTC, e.g. "2026-11-24T03:15:20.000Z")
   - salt (string)
+  - Corrections only: adjusts_record_id (string, the original bag's record_id) and reason_code (string, e.g. "wrong_weight", "wrong_material", "duplicate"). Leave both keys out completely on normal bags. A correction's weight_kg is the corrected full weight, not the difference, and it has its own new record_id and salt.
 - Export values exactly as stored. Do not round, trim or reformat them, because any change breaks the fingerprint.
 - Also provide the same export as an authenticated API endpoint (admin API key), GET /api/anchoring/export?centre=C001&date=2026-11-24, so the job can run automatically later.
 
