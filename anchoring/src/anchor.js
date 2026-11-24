@@ -59,7 +59,8 @@ async function anchorHedera(message) {
     sequence_number: receipt.topicSequenceNumber.toString(),
     transaction_id: tx.transactionId.toString(),
     consensus_timestamp: ts,
-    status: receipt.status.toString(),
+    status: 'anchored',
+    hedera_status: receipt.status.toString(),
     explorer: `https://hashscan.io/${network}/topic/${topicId}`,
   };
 }
