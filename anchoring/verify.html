@@ -141,8 +141,14 @@ document.getElementById('go').addEventListener('click', async () => {
   let ok = true;
   const step = (pass, text) => { steps.push(`<li class="${pass ? 'pass' : 'fail'}">${pass ? '✓' : '✗'} ${esc(text)}</li>`); if (!pass) ok = false; };
   try {
-    const record = readJson('record', 1);
-    const batch = readJson('batch', 2);
+    let record = readJson('record', 1);
+    let batch = readJson('batch', 2);
+    // Files put in the wrong boxes: swap them round
+    if (record && record.records && record.root && batch && batch.record_id) {
+      [record, batch] = [batch, record];
+      const r = document.getElementById('record'), b = document.getElementById('batch');
+      [r.value, b.value] = [b.value, r.value];
+    }
     const leaf = await leafHash(record);
     const entry = (batch.records || []).find(r => r.record_id === String(record.record_id));
     step(!!entry, entry ? `Record ${record.record_id} is listed in batch ${batch.batch_id}` : `Record ${record.record_id} is not in batch ${batch.batch_id}`);
