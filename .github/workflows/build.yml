@@ -3,6 +3,9 @@ name: Build app
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'anchoring/**'
+      - '.github/workflows/anchoring.yml'
   workflow_dispatch:
 
 permissions:

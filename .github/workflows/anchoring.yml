@@ -1,0 +1,62 @@
+name: Hedera anchoring
+
+# Runs anchoring requests in anchoring/requests/ using the Hedera key stored as the
+# repository secret HEDERA_PRIVATE_KEY. Results are committed to the "anchors" branch.
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'anchoring/requests/**'
+      - 'anchoring/hedera-config.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hedera-anchoring
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get previous results
+        run: |
+          if git ls-remote --exit-code --heads origin anchors >/dev/null; then
+            git fetch --depth 1 origin +refs/heads/anchors:refs/remotes/origin/anchors
+            git worktree add out origin/anchors
+          else
+            mkdir out
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install
+        working-directory: anchoring
+        run: npm ci
+
+      - name: Run requests
+        working-directory: anchoring
+        env:
+          HEDERA_PRIVATE_KEY: ${{ secrets.HEDERA_PRIVATE_KEY }}
+        run: |
+          if [ -z "$HEDERA_PRIVATE_KEY" ]; then echo "The HEDERA_PRIVATE_KEY secret is not set"; exit 1; fi
+          node src/run-requests.js ../out
+
+      - name: Save results to the anchors branch
+        if: always()
+        run: |
+          cd out
+          [ -n "$(ls -A . 2>/dev/null | grep -v '^\.git$')" ] || exit 0
+          rm -rf /tmp/res && mkdir /tmp/res && cp -r requests anchors /tmp/res/ 2>/dev/null || true
+          cd .. && rm -rf pub && mkdir pub && cd pub
+          git init -q && git checkout -q -b anchors
+          cp -r /tmp/res/* .
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          git add -A && git commit -qm "Anchoring results $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" anchors
