@@ -38,12 +38,13 @@
   <p class="lead">Check that a recycling record has not been changed since KLEAN anchored it on a public blockchain. Everything runs in your browser; nothing is uploaded.</p>
 
   <div class="card">
-    <label for="record">1. The record <span class="hint">(JSON, exactly as exported from the dashboard, including its salt)</span></label>
+    <label for="record">1. The record <span class="hint">(choose the record .json file, or paste its contents)</span></label>
+    <input type="file" id="recordFile" accept=".json,application/json" aria-label="Choose record file">
     <textarea id="record" spellcheck="false" placeholder='{"record_id":"B0007","visit_id":"V1", ...}'></textarea>
   </div>
 
   <div class="card">
-    <label for="batch">2. The anchored batch <span class="hint">(the batch .json file from KLEAN)</span></label>
+    <label for="batch">2. The anchored batch <span class="hint">(choose the batch .json file from KLEAN, or paste its contents)</span></label>
     <input type="file" id="batchFile" accept=".json,application/json" aria-label="Choose batch file">
     <textarea id="batch" spellcheck="false" placeholder='{"batch_id":"C001-2026-11-16","root":"...","anchor":{...},"records":[...]}'></textarea>
   </div>
@@ -108,6 +109,24 @@ async function hederaCheck(anchor, root) {
   return { match: msg.root === root, consensus: j.consensus_timestamp, msg };
 }
 
+document.getElementById('recordFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (f) document.getElementById('record').value = await f.text();
+});
+// Dropping a file onto a box loads its contents, not its name
+for (const id of ['record', 'batch']) {
+  const ta = document.getElementById(id);
+  ta.addEventListener('dragover', e => e.preventDefault());
+  ta.addEventListener('drop', async e => {
+    const f = e.dataTransfer.files[0];
+    if (f) { e.preventDefault(); ta.value = await f.text(); }
+  });
+}
+function readJson(id, label) {
+  const t = document.getElementById(id).value.trim();
+  if (!t) throw new Error(`Box ${label} is empty. Choose the file or paste its contents.`);
+  if (/^[^{\[]*\.json$/i.test(t)) throw new Error(`Box ${label} has a file name, not the file's contents. Use the Choose file button instead.`);
+  try { return JSON.parse(t); } catch (e) { throw new Error(`Box ${label} is not valid JSON: ${e.message}`); }
+}
 document.getElementById('batchFile').addEventListener('change', async e => {
   const f = e.target.files[0]; if (f) document.getElementById('batch').value = await f.text();
 });
@@ -117,8 +136,8 @@ document.getElementById('go').addEventListener('click', async () => {
   let ok = true;
   const step = (pass, text) => { steps.push(`<li class="${pass ? 'pass' : 'fail'}">${pass ? '✓' : '✗'} ${esc(text)}</li>`); if (!pass) ok = false; };
   try {
-    const record = JSON.parse(document.getElementById('record').value);
-    const batch = JSON.parse(document.getElementById('batch').value);
+    const record = readJson('record', 1);
+    const batch = readJson('batch', 2);
     const leaf = await leafHash(record);
     const entry = (batch.records || []).find(r => r.record_id === String(record.record_id));
     step(!!entry, entry ? `Record ${record.record_id} is listed in batch ${batch.batch_id}` : `Record ${record.record_id} is not in batch ${batch.batch_id}`);
