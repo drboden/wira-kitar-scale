@@ -1,0 +1,15 @@
+[
+  {
+    "captured_at": "2026-11-21T07:54:09.537Z",
+    "centre_id": "C003",
+    "collector_ref": "COL-0033",
+    "material": "botol pet",
+    "record_id": "3093fb06-e09a-4f3c-9785-c3a816f88800",
+    "salt": "e2730293421d7a5f2a55360b66d335e7",
+    "scale_raw": "",
+    "scale_stable": false,
+    "visit_id": "m57c22a4paf20y5ta2k9rzw9c58jm58v",
+    "weight_kg": 10,
+    "weight_source": "manual"
+  }
+]
