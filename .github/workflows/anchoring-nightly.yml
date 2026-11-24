@@ -1,0 +1,64 @@
+name: Nightly anchoring
+
+# Every night at 02:30 Malaysia time: ask the dashboard which centre-days are waiting,
+# anchor each on Hedera, and import the proofs back. Logs go to the "anchors" branch.
+on:
+  schedule:
+    - cron: '30 18 * * *'   # 18:30 UTC = 02:30 MYT
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (export and fingerprint only, no Hedera, no import)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hedera-anchoring
+  cancel-in-progress: false
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get previous results
+        run: |
+          if git ls-remote --exit-code --heads origin anchors >/dev/null; then
+            git fetch --depth 1 origin +refs/heads/anchors:refs/remotes/origin/anchors
+            git worktree add out origin/anchors
+          else
+            mkdir out
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install
+        working-directory: anchoring
+        run: npm ci
+
+      - name: Anchor pending days
+        working-directory: anchoring
+        env:
+          HEDERA_PRIVATE_KEY: ${{ secrets.HEDERA_PRIVATE_KEY }}
+          HERCULES_API_KEY: ${{ secrets.HERCULES_API_KEY }}
+        run: |
+          node src/nightly.js ../out ${{ inputs.dry_run && '--dry-run' || '' }}
+
+      - name: Save results to the anchors branch
+        if: always()
+        run: |
+          rm -rf /tmp/res && mkdir /tmp/res
+          (cd out && for d in requests anchors exports nightly; do [ -d "$d" ] && cp -r "$d" /tmp/res/; done) || true
+          [ -n "$(ls -A /tmp/res)" ] || exit 0
+          rm -rf pub && mkdir pub && cd pub
+          git init -q && git checkout -q -b anchors
+          cp -r /tmp/res/* .
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          git add -A && git commit -qm "Nightly anchoring $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" anchors

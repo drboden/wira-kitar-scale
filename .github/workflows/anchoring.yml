@@ -51,10 +51,10 @@ jobs:
       - name: Save results to the anchors branch
         if: always()
         run: |
-          cd out
-          [ -n "$(ls -A . 2>/dev/null | grep -v '^\.git$')" ] || exit 0
-          rm -rf /tmp/res && mkdir /tmp/res && cp -r requests anchors /tmp/res/ 2>/dev/null || true
-          cd .. && rm -rf pub && mkdir pub && cd pub
+          rm -rf /tmp/res && mkdir /tmp/res
+          (cd out && for d in requests anchors exports nightly; do [ -d "$d" ] && cp -r "$d" /tmp/res/; done) || true
+          [ -n "$(ls -A /tmp/res)" ] || exit 0
+          rm -rf pub && mkdir pub && cd pub
           git init -q && git checkout -q -b anchors
           cp -r /tmp/res/* .
           git config user.name "github-actions" && git config user.email "actions@github.com"
