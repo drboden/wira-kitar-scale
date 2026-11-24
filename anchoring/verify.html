@@ -91,6 +91,7 @@ function normalise(r) {
   }
   return out;
 }
+const when = ts => { const n = Number(String(ts).split('.')[0]); return Number.isFinite(n) && n > 1e9 ? new Date(n * 1000).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'medium' }) : ts; };
 const hex = b => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
 const unhex = h => new Uint8Array(h.match(/../g).map(x => parseInt(x, 16)));
 async function sha(prefix, ...parts) {
@@ -162,10 +163,10 @@ document.getElementById('go').addEventListener('click', async () => {
     const a = batch.anchor || {};
     details.push(['Batch', batch.batch_id], ['Date', batch.date], ['Records in batch', batch.count], ['Root', batch.root]);
     if (a.method === 'hedera') {
-      details.push(['Blockchain', `Hedera ${a.network}`], ['Topic / message', `${a.topic_id} #${a.sequence_number}`], ['Consensus time', a.consensus_timestamp]);
+      details.push(['Blockchain', `Hedera ${a.network}`], ['Topic / message', `${a.topic_id} #${a.sequence_number}`], ['Published on Hedera', when(a.consensus_timestamp)]);
       try {
         const hc = await hederaCheck(a, batch.root);
-        step(hc.match, hc.match ? `Hedera's public record shows this root, published at ${hc.consensus}` : 'Hedera\'s public record shows a different root');
+        step(hc.match, hc.match ? `Hedera's public record shows this root, published on ${when(hc.consensus)}` : 'Hedera\'s public record shows a different root');
       } catch (e) { step(false, 'Could not reach Hedera to confirm the root: ' + e.message); }
       details.push(['Explorer', `<a href="https://hashscan.io/${esc(a.network)}/topic/${esc(a.topic_id)}" target="_blank" rel="noopener">View on HashScan</a>`]);
     } else if (a.method === 'opentimestamps') {
