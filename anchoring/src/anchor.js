@@ -71,7 +71,7 @@ async function main() {
   const leaves = records.map(M.leafHash);
   const { root, levels } = M.buildTree(leaves);
   const rootHex = root.toString('hex');
-  const centre = o.centre || [...new Set(records.map(r => r.centre_id))].join('+');
+  const centre = o.centre || [...new Set(records.map(r => r.centre_id).filter(Boolean))].join('+') || 'WK';
   const batchId = `${centre}-${o.date}`.replace(/[^A-Za-z0-9+_-]/g, '_');
 
   const message = { v: 1, scheme: M.SCHEME, batch_id: batchId, date: o.date, count: records.length, root: rootHex };

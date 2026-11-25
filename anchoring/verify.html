@@ -72,7 +72,32 @@
 const OPTIONAL_FIELDS = ['adjusts_record_id', 'reason_code'];
 const LEAF_FIELDS = ['record_id','visit_id','centre_id','collector_ref','material','weight_kg','weight_source','scale_raw','scale_stable','captured_at','salt'];
 
+const TYPE_FIELDS = {
+  consent: ['record_type','record_id','collector_ref','notice_version','language','consent','age_confirmed','method','parts_acknowledged','created_at','salt'],
+  qr_issue: ['record_type','record_id','collector_ref','issue_number','event','created_at','salt'],
+  outbound: ['record_type','record_id','outbound_ref','centre_id','buyer_id','material','weight_kg','weight_source','ticket_no','date','salt'],
+};
+const BOOL_FIELDS = new Set(['scale_stable','consent','age_confirmed']);
+const toBool = v => v === true || v === 'true' || v === 1 || v === '1';
+function normaliseTyped(r) {
+  const fields = TYPE_FIELDS[r.record_type];
+  if (!fields) throw new Error(`Unknown record type "${r.record_type}"`);
+  const out = {};
+  for (const f of fields) {
+    let v = r[f];
+    if (v === undefined || v === null) {
+      if (f === 'ticket_no') v = '';
+      else throw new Error(`The record is missing "${f}"`);
+    }
+    if (f === 'weight_kg') { const n = Number(v); if (!Number.isFinite(n)) throw new Error('weight_kg is not a number'); v = n.toFixed(3); }
+    else if (BOOL_FIELDS.has(f)) v = toBool(v);
+    else v = String(v);
+    out[f] = v;
+  }
+  return out;
+}
 function normalise(r) {
+  if (r.record_type !== undefined && r.record_type !== null && r.record_type !== '' && r.record_type !== 'bag') return normaliseTyped(r);
   const out = {};
   for (const f of LEAF_FIELDS) {
     let v = r[f];

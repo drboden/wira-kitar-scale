@@ -34,7 +34,42 @@ const OPTIONAL_FIELDS = [
   'reason_code',       // e.g. wrong_weight, wrong_material, duplicate
 ];
 
+// Other record types (version 1). record_type comes first and is part of the fingerprint.
+// Bags have no record_type (or "bag") and hash exactly as before.
+const TYPE_FIELDS = {
+  consent: ['record_type', 'record_id', 'collector_ref', 'notice_version', 'language', 'consent', 'age_confirmed', 'method', 'parts_acknowledged', 'created_at', 'salt'],
+  qr_issue: ['record_type', 'record_id', 'collector_ref', 'issue_number', 'event', 'created_at', 'salt'],
+  outbound: ['record_type', 'record_id', 'outbound_ref', 'centre_id', 'buyer_id', 'material', 'weight_kg', 'weight_source', 'ticket_no', 'date', 'salt'],
+};
+const BOOL_FIELDS = new Set(['scale_stable', 'consent', 'age_confirmed']);
+const toBool = v => v === true || v === 'true' || v === 1 || v === '1';
+
+function normaliseTyped(record) {
+  const fields = TYPE_FIELDS[record.record_type];
+  if (!fields) throw new Error(`Record ${record.record_id || '?'}: unknown record_type "${record.record_type}"`);
+  const out = {};
+  for (const f of fields) {
+    let v = record[f];
+    if (v === undefined || v === null) {
+      if (f === 'ticket_no') v = '';
+      else throw new Error(`Record ${record.record_id || '?'} (${record.record_type}) is missing "${f}"`);
+    }
+    if (f === 'weight_kg') {
+      const n = Number(v);
+      if (!Number.isFinite(n)) throw new Error(`Record ${record.record_id}: bad weight_kg "${v}"`);
+      v = n.toFixed(3);
+    } else if (BOOL_FIELDS.has(f)) v = toBool(v);
+    else v = String(v);
+    out[f] = v;
+  }
+  if (out.salt.length < 16) throw new Error(`Record ${out.record_id}: salt must be at least 16 characters`);
+  return out;
+}
+
 function normalise(record) {
+  if (record.record_type !== undefined && record.record_type !== null && record.record_type !== '' && record.record_type !== 'bag') {
+    return normaliseTyped(record);
+  }
   const out = {};
   for (const f of LEAF_FIELDS) {
     let v = record[f];
@@ -126,4 +161,4 @@ function randomSalt() {
   return crypto.randomBytes(16).toString('hex');
 }
 
-module.exports = { SCHEME, LEAF_FIELDS, OPTIONAL_FIELDS, normalise, canonical, leafHash, buildTree, proofFor, rootFromProof, randomSalt };
+module.exports = { SCHEME, LEAF_FIELDS, OPTIONAL_FIELDS, TYPE_FIELDS, normalise, canonical, leafHash, buildTree, proofFor, rootFromProof, randomSalt };

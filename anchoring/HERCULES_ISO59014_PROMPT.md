@@ -29,7 +29,7 @@ PART 2. OUTBOUND SALES AND MASS BALANCE (traceability downstream)
    then staff enter a counted closing stock (estimate allowed, with a photo of the stockpile).
    Show the difference in kg and %. Over 10% difference: flag for Klean admin review with a required explanation.
 4. Reports: % of kg bought that reached a licensed recycler, % sent to disposal, and the recycling rate (kg recycled / kg collected) per centre per month. EPR and credit totals by default use the lower of kg bought and kg delivered to licensed recyclers.
-5. Include outbound sales in the nightly anchoring export as a second record type, with fields: record_type "outbound", outbound_ref, centre_id, buyer_id, material, weight_kg, weight_source, ticket_no, date, salt. (I will update the anchoring job to accept this type.)
+5. Include outbound sales in the nightly anchoring export as a second record type, with fields: record_type "outbound", record_id (the outbound_sale id), outbound_ref, centre_id, buyer_id, material, weight_kg, weight_source, ticket_no, date (YYYY-MM-DD), salt. (I will update the anchoring job to accept this type.)
 
 PART 3. CODE OF CONDUCT AND AGREEMENTS
 1. Admin uploads the Wira Kitar Code of Conduct (PDF, versioned) and a short Bahasa Malaysia summary.
