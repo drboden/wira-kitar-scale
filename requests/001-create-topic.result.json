@@ -1,0 +1,10 @@
+{
+  "request": "001-create-topic.json",
+  "action": "create-topic",
+  "ran_at": "2026-11-24T08:33:42.287Z",
+  "network": "testnet",
+  "account_id": "0.0.11587885",
+  "output": "Created topic 0.0.11591767 on testnet\nSet HEDERA_TOPIC_ID=0.0.11591767\nView: https://hashscan.io/testnet/topic/0.0.11591767\n",
+  "ok": true,
+  "topic_id": "0.0.11591767"
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "buyer_id": "BYR-0001",
+    "centre_id": "C003",
+    "date": "2026-11-25",
+    "material": "botol pet",
+    "outbound_ref": "C003-OUT-20261125-001",
+    "record_type": "outbound",
+    "salt": "08c82d1c596aebbedaea7f5c33361cfc",
+    "ticket_no": "wb654",
+    "weight_kg": 1234,
+    "weight_source": "buyer_weighbridge"
+  }
+]

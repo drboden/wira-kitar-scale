@@ -1,0 +1,42 @@
+{
+  "started_at": "2026-11-26T01:53:08.368Z",
+  "dry_run": false,
+  "network": "testnet",
+  "batches": [
+    {
+      "centre_id": "C003",
+      "date": "2026-11-25",
+      "expected": 1,
+      "exported": 1,
+      "result": "FAILED",
+      "error": "Error: Record ? (outbound) is missing \"record_id\"\n"
+    },
+    {
+      "centre_id": "WK",
+      "date": "2026-11-25",
+      "expected": 3,
+      "exported": 3,
+      "batch_id": "WK-2026-11-25",
+      "root": "7e3a9e42964e92de7e396e2fa679432b60c11760bc6cedda0c25033eec262196",
+      "anchor": {
+        "method": "hedera",
+        "network": "testnet",
+        "topic_id": "0.0.11591767",
+        "sequence_number": "3",
+        "transaction_id": "0.0.11587885@1795657981.641068705",
+        "consensus_timestamp": "1795657989.140441800",
+        "status": "anchored",
+        "hedera_status": "SUCCESS",
+        "explorer": "https://hashscan.io/testnet/topic/0.0.11591767"
+      },
+      "import": {
+        "ok": true,
+        "batch_id": "WK-2026-11-25",
+        "records": 3
+      },
+      "result": "anchored and imported"
+    }
+  ],
+  "finished_at": "2026-11-26T01:53:20.031Z",
+  "failed": 1
+}

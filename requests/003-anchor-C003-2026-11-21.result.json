@@ -1,0 +1,12 @@
+{
+  "request": "003-anchor-C003-2026-11-21.json",
+  "action": "anchor",
+  "input": "exports/C003-2026-11-21.json",
+  "date": "2026-11-21",
+  "method": "hedera",
+  "ran_at": "2026-11-24T10:59:36.017Z",
+  "network": "testnet",
+  "account_id": "0.0.11587885",
+  "output": "Anchored 1 records\nBatch:  C003-2026-11-21\nRoot:   d1d148816c7948873854d20a499c226aa591e682450e7f2ed2cdd0dfc7fcef77\nAnchor: {\n  \"method\": \"hedera\",\n  \"network\": \"testnet\",\n  \"topic_id\": \"0.0.11591767\",\n  \"sequence_number\": \"2\",\n  \"transaction_id\": \"0.0.11587885@1795517969.829015298\",\n  \"consensus_timestamp\": \"1795517976.362868954\",\n  \"status\": \"SUCCESS\",\n  \"explorer\": \"https://hashscan.io/testnet/topic/0.0.11591767\"\n}\nFiles:  ../out/anchors/C003-2026-11-21.json, ../out/anchors/C003-2026-11-21-proofs.csv\n",
+  "ok": true
+}

@@ -1,0 +1,33 @@
+[
+  {
+    "age_confirmed": true,
+    "collector_ref": "COL-0031",
+    "consent": true,
+    "created_at": "2026-11-25T15:43:50.244Z",
+    "language": "en",
+    "method": "whatsapp",
+    "notice_version": "1.0",
+    "parts_acknowledged": 5,
+    "record_id": "bb4f4b3f-bde0-41e3-a151-a200c1f25956",
+    "record_type": "consent",
+    "salt": "c7210d3a5ae9abc57efb2bca4e07d17d"
+  },
+  {
+    "collector_ref": "COL-0033",
+    "created_at": "2026-11-25T03:44:38.916Z",
+    "event": "issued",
+    "issue_number": 1,
+    "record_id": "e3c5db2d-52ec-44c6-a9ee-e5ce6ab2d865",
+    "record_type": "qr_issue",
+    "salt": "936a61dbc7ca63e505894dfac3d67fa3"
+  },
+  {
+    "collector_ref": "COL-0031",
+    "created_at": "2026-11-25T15:47:50.168Z",
+    "event": "issued",
+    "issue_number": 1,
+    "record_id": "75eb8e32-5940-4798-9a3a-9e441cab5509",
+    "record_type": "qr_issue",
+    "salt": "ab9a68207b9b049f20ec1607fff4d176"
+  }
+]

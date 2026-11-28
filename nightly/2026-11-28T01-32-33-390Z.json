@@ -1,0 +1,17 @@
+{
+  "started_at": "2026-11-28T01:32:33.390Z",
+  "dry_run": false,
+  "network": "testnet",
+  "batches": [
+    {
+      "centre_id": "C003",
+      "date": "2026-11-25",
+      "expected": 1,
+      "exported": 1,
+      "result": "FAILED",
+      "error": "Error: Record ? (outbound) is missing \"record_id\"\n"
+    }
+  ],
+  "finished_at": "2026-11-28T01:32:33.905Z",
+  "failed": 1
+}

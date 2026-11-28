@@ -1,0 +1,39 @@
+{
+  "v": 1,
+  "scheme": "wira-kitar-merkle-v1",
+  "batch_id": "C003-2026-11-21",
+  "date": "2026-11-21",
+  "count": 1,
+  "root": "d1d148816c7948873854d20a499c226aa591e682450e7f2ed2cdd0dfc7fcef77",
+  "created_at": "2026-11-24T10:59:37.074Z",
+  "leaf_fields": [
+    "record_id",
+    "visit_id",
+    "centre_id",
+    "collector_ref",
+    "material",
+    "weight_kg",
+    "weight_source",
+    "scale_raw",
+    "scale_stable",
+    "captured_at",
+    "salt"
+  ],
+  "anchor": {
+    "method": "hedera",
+    "network": "testnet",
+    "topic_id": "0.0.11591767",
+    "sequence_number": "2",
+    "transaction_id": "0.0.11587885@1795517969.829015298",
+    "consensus_timestamp": "1795517976.362868954",
+    "status": "SUCCESS",
+    "explorer": "https://hashscan.io/testnet/topic/0.0.11591767"
+  },
+  "records": [
+    {
+      "record_id": "3093fb06-e09a-4f3c-9785-c3a816f88800",
+      "leaf_hash": "d1d148816c7948873854d20a499c226aa591e682450e7f2ed2cdd0dfc7fcef77",
+      "proof": []
+    }
+  ]
+}
